@@ -1,0 +1,29 @@
+{
+  "name": "template",
+  "version": "1.0.0",
+  "description": "une template pour Génial-O faite en javascript pour discord.js@14",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "set NODE_ENV=dev && node main.js",
+    "prod": "set NODE_ENV=prod && node main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Genial-Team/template.git"
+  },
+  "author": "LyneQ",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Genial-Team/template/issues"
+  },
+  "homepage": "https://github.com/Genial-Team/template#readme",
+  "dependencies": {
+    "@discordjs/rest": "^1.6.0",
+    "colors": "^1.4.0",
+    "discord-api-types": "^0.37.35",
+    "discord.js": "^14.7.1",
+    "dotenv": "^16.0.3",
+    "mongoose": "^7.0.2"
+  }
+}
