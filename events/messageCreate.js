@@ -6,6 +6,6 @@ module.exports = {
         canBeUsedOnDM: false
     },
     async execute(message){
-        await message.react("✋")
+        // TODO: analyse message and suppress if it contains a bad word (only if auto-mod is active in the guild)
     }
 }

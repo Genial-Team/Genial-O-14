@@ -40,6 +40,10 @@ module.exports = {
             .setColor(colorScheme.default.primary)
             .setTimestamp();
 
-        return await interaction.reply({ embeds: [embed], fetchReply: true })
+        interaction.reply({ embeds: [embed], fetchReply: true })
+            .then( (message) => {
+                message.react("👍")
+                message.react("👎")
+            } )
     }
 }
