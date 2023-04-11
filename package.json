@@ -10,14 +10,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Genial-Team/template.git"
+    "url": "git+https://github.com/Genial-Team/Genial-O-14.git"
   },
   "author": "LyneQ",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Genial-Team/template/issues"
+    "url": "https://github.com/Genial-Team/Genial-O-14/issues"
   },
-  "homepage": "https://github.com/Genial-Team/template#readme",
+  "homepage": "https://github.com/Genial-Team/Genial-O-14#readme",
   "dependencies": {
     "@discordjs/rest": "^1.6.0",
     "colors": "^1.4.0",
@@ -25,5 +25,7 @@
     "discord.js": "^14.7.1",
     "dotenv": "^16.0.3",
     "mongoose": "^7.0.2"
-  }
+  },
+  "devDependencies": {},
+  "keywords": []
 }
