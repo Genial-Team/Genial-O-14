@@ -18,6 +18,7 @@ module.exports = {
                 commandList.commandsOptionsResponse.push({
                     name: command.config.name,
                     modalResponse: command.modalResponse,
+                    buttonResponse: command.buttonResponse
                 })
                 //crée l'interaction pour répondre à la commande
                 client.on( "interactionCreate", async (interaction) => {

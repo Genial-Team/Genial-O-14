@@ -1,3 +1,4 @@
+const connectToDatabase = require("../database/init")
 module.exports = {
     config:{
         name: "ready",
@@ -7,6 +8,7 @@ module.exports = {
     async execute(client){
         console.log(colors.green(`connecté en tant que ${colors.blue(client.user.tag)}`))
 
+        connectToDatabase()
         client.user.setPresence({
             activities: [{
                 name: `ses ${client.guilds.cache.size || "undefined"} serveurs`,

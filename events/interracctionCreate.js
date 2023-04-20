@@ -7,8 +7,17 @@ module.exports = {
     },
     async execute(interaction){
         const interactionType = interaction.type;
-
-        //create a switch case for each interaction type exxept interactionType.APPLICATION_COMMAND
+        /**
+         * on récupère la commande associée à l'interaction si elle existe
+         * @returns {*}
+         * @constructor
+         */
+        const getAssociatedCommand = () => {
+            if ( !interaction.customId ) return;
+                const receivedCommandName = commandList.commands.find( (command) => command.name === interaction.customId.split(":")[0] );
+                return commandList.commandsOptionsResponse.find((command) => command.name === receivedCommandName.name);
+        }
+        //create a switch case for each interaction type except interactionType.APPLICATION_COMMAND
         switch (interactionType) {
             case 1:
                 console.log(`interaction type is: ${interactionType} (PING)`)
@@ -17,13 +26,18 @@ module.exports = {
                 console.log(`interaction type is: ${interactionType} (APPLICATION_COMMAND)`)
                 break;
             case 3:
-                console.log(`interaction type is: ${interactionType} (MESSAGE_COMPONENT)`)
+                // on exécute la fonction buttonResponse de la commande associée
+                getAssociatedCommand().buttonResponse(interaction)
+                    .catch( (err) => {
+                        console.log("error in buttonResponse function".red)
+                        console.log(err)
+                        interaction.reply({ content: error.fr.commandError.commonError, ephemeral: true })
+                    })
                 break;
             case 4:
                 console.log(`interaction type is: ${interactionType} (APPLICATION_COMMAND_AUTOCOMPLETE)`)
                 break;
             case 5:
-                console.log(`interaction type is: ${interactionType} (MODAL_SUBMIT)`)
                 let modalData = {
                     id: interaction.customId,
                     fields : []
@@ -32,11 +46,8 @@ module.exports = {
                 for (const interactionElement of interaction.components) {
                     modalData.fields.push(interactionElement.components[0])
                 }
-                // on cherche la commande associée au modal
-                const receivedCommandName = commandList.commands.find( (command) => command.name === interaction.customId.split(":")[0] );
-                const associatedCommand = commandList.commandsOptionsResponse.find( (command) => command.name === receivedCommandName.name );
                 // on exécute la fonction modalResponse de la commande associée
-                await associatedCommand.modalResponse(interaction, modalData)
+                getAssociatedCommand().modalResponse(interaction, modalData)
                     .catch( (err) => {
                         console.log("error in modalResponse function".red)
                         console.log(err)
@@ -47,6 +58,5 @@ module.exports = {
                 console.log("interaction type is: ", interactionType )
                 break;
         }
-
     }
 }

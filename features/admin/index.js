@@ -17,8 +17,8 @@ module.exports = {
                 commandList.commands.push(command.initCommand())
                 commandList.commandsOptionsResponse.push({
                     name: command.config.name,
-                    modalResponse: command.modalResponse,
-                    buttonResponse: command.buttonResponse
+                    modalResponse: command.modalResponse ? command.modalResponse : null,
+                    buttonResponse: command.buttonResponse ? command.buttonResponse : null
                 })
                 //crée l'interaction pour répondre à la commande
                 client.on( "interactionCreate", async (interaction) => {
@@ -30,6 +30,6 @@ module.exports = {
 
             } )
 
-        console.log("all basic command initialized".green)
+        console.log("moderation command initialized".green)
     }
 }

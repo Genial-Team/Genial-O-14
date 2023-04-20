@@ -1,6 +1,6 @@
 module.exports = () => {
     const mongoose = require("mongoose");
-    const mongoLink = `mongodb://superadmin:quequinlynhe235@51.77.159.187:27017/genialo-dev?authMechanism=SCRAM-SHA-256&authSource=admin`
+    const mongoLink = `mongodb://${process.env.DataBaseUser}:${process.env.DataBasePass}@${process.env.DataBaseIp}/${process.env.DataBaseName}?${process.env.DataBaseOptions}`
 
 
     mongoose.connect(mongoLink)
