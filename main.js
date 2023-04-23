@@ -13,6 +13,7 @@ global.commandList = {
     commands: [],
     commandsOptionsResponse: []
 };
+global.discordClient = client;
 global.error = require("./config/error");
 global.dataBase = require("./database/getModels")
 global.colors = colors;

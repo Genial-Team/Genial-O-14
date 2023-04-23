@@ -2,6 +2,7 @@ module.exports = {
     fr:{
         commandError:{
             commonError : "une erreur est survenue, merci de re-essayez plus tard",
+            ProcessError : "Une erreur interne s'est produite, merci de re-essayez plus tard ou de contacté l'équipe de développement",
             noArgumentFound: "une erreur est survenue, merci de vérifié les argument de votre commande"
         },
         checkingValidity:{

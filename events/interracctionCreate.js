@@ -13,9 +13,11 @@ module.exports = {
          * @constructor
          */
         const getAssociatedCommand = () => {
-            if ( !interaction.customId ) return;
+            if ( interaction.customId ) {
                 const receivedCommandName = commandList.commands.find( (command) => command.name === interaction.customId.split(":")[0] );
                 return commandList.commandsOptionsResponse.find((command) => command.name === receivedCommandName.name);
+            }
+            return null;
         }
         //create a switch case for each interaction type except interactionType.APPLICATION_COMMAND
         switch (interactionType) {
@@ -27,12 +29,7 @@ module.exports = {
                 break;
             case 3:
                 // on exécute la fonction buttonResponse de la commande associée
-                getAssociatedCommand().buttonResponse(interaction)
-                    .catch( (err) => {
-                        console.log("error in buttonResponse function".red)
-                        console.log(err)
-                        interaction.reply({ content: error.fr.commandError.commonError, ephemeral: true })
-                    })
+                await getAssociatedCommand().buttonResponse(interaction)
                 break;
             case 4:
                 console.log(`interaction type is: ${interactionType} (APPLICATION_COMMAND_AUTOCOMPLETE)`)
