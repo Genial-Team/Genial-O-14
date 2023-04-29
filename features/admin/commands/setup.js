@@ -2,7 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder, TextInputBuilder, TextInputStyle, Act
     ButtonBuilder, ChannelType, PermissionFlagsBits
 } = require("discord.js");
 
-async function createGuildConfig(interaction) {
+async function createGuildConfig(interaction, oldInteraction) {
     // crée le salon de logs
     interaction.guild.channels.create({
         name: "génial-logs",
@@ -41,8 +41,22 @@ async function createGuildConfig(interaction) {
                 muteID: role.id,
                 logChannel: channel.id
             }).then(() => {
+                interaction.guild.channels.cache.filter((channel) => channel.type === ChannelType.GuildText).forEach((channel) => {
+                    channel.permissionOverwrites.edit(role.id, {
+                        SendMessages: false,
+                        AddReactions: false,
+                        Speak: false,
+                        SendMessagesInThreads: false,
+                        SendTTSMessages: false,
+                        //SendVoiceMessages: false,
+                        Stream: false,
+                        UseSoundboard: false,
+                        UseEmbeddedActivities: false,
+                    })
+                })
+
                 // envoie un message de confirmation dans le salon des logs
-                interaction.guild.channels.fetch(channel.id).then((channel) => {
+                interaction.guild.channels.fetch(channel.id).then(async (channel) => {
                     channel.send({
                         embeds: [
                             new EmbedBuilder()
@@ -64,11 +78,17 @@ async function createGuildConfig(interaction) {
 
                         ]
                     })
-                    return interaction.editReply({content: "Le serveur a été réinitialisé", components: [], ephemeral: true})
+                    await oldInteraction.deleteReply();
+                    commandCache.del(`setup:interaction:${interaction.user.id}`)
+                    return interaction.reply({
+                        content: "Le serveur a été réinitialisé",
+                        components: [],
+                        ephemeral: true
+                    })
                 })
                 //si le document n'a pas était créé, on envoie un message d'erreur
             }).catch((err) => {
-                return interaction.editReply({
+                return interaction.reply({
                     content: error.fr.commandError.commonError,
                     components: [],
                     ephemeral: true
@@ -76,28 +96,6 @@ async function createGuildConfig(interaction) {
             })
         })
     })
-
-
-    /**
-     * edit all channels permissions to deny send messages for mute role
-     */
-    // interaction.guild.channels.cache.filter((channel) => channel.type === ChannelType.GuildText).forEach((channel) => {
-    //     channel.permissionOverwrites.edit(muteID, {
-    //         SEND_MESSAGES: false,
-    //         ADD_REACTIONS: false,
-    //         SPEAK: false,
-    //         SEND_MESSAGES_IN_THREADS: false,
-    //         SEND_TTS_MESSAGES: false,
-    //         STREAM: false,
-    //         USE_SOUNDBOARD: false,
-    //         USE_EMBEDDED_ACTIVITIES: false,
-    //     })
-    // })
-
-    /**
-     * create a new server config
-     */
-
 }
 
 const getServerConfig = require("../../../modules/getServerConfig.js");
@@ -113,6 +111,17 @@ module.exports = {
           .setDescription("🛠️ | configure votre serveur")
     },
     execute: async function(interaction) {
+
+        //on stocke l'interaction dans le cache
+        let interactionCache = {
+            interaction: interaction,
+            interactionToken: interaction.token,
+            interactionWebhookClient: interaction.webhook.client,
+            interactionWebhookToken: interaction.webhook.token
+        }
+        commandCache.set(`setup:interaction:${interaction.user.id}`, interactionCache, 900);
+
+
         //import server config and chech error
         const serverConfig = await getServerConfig(interaction.guild.id);
         if ( serverConfig && serverConfig.guildID ) {
@@ -127,7 +136,6 @@ module.exports = {
                         .setLabel("Non")
                         .setStyle(ButtonStyle.Danger)
                 )
-            console.log(interaction)
             await interaction.reply({
                 content: "Vous avez déjà configuré votre serveur, voulez-vous le réinitialiser ?",
                 components: [actionRow],
@@ -142,23 +150,34 @@ module.exports = {
 
     },
     buttonResponse: async function(interaction) {
+        //import cache
+        const fetchedCache = commandCache.get(`setup:interaction:${interaction.user.id}`);
 
-        // delete the original message
-        console.log(interaction)
-        await interaction.reply({content: "Réinitialisation du serveur en cours...", components: [], ephemeral: true});
+        let oldInteraction = fetchedCache.interaction;
+        oldInteraction.token = fetchedCache.interactionToken;
+        oldInteraction.webhook.client = fetchedCache.interactionWebhookClient;
+        oldInteraction.webhook.token = fetchedCache.interactionWebhookToken;
+
         // import server config and chech error
         const serverConfig = await getServerConfig(interaction.guild.id);
         if ( !serverConfig || !serverConfig.guildID ) return await createGuildConfig(interaction);
         // check if the confirm button is pressed
-        if ( interaction.customId === "setup:reset:true" ) {
-            // on supprime le salon et le rôle mute precedent crée
-            interaction.guild.channels.delete(serverConfig.logChannel, `Réinitialisation du serveur demandé par ${interaction.user.username}`)
-            interaction.guild.roles.delete(serverConfig.muteID, `Réinitialisation du serveur demandé par ${interaction.user.username}`)
-            // on supprime le document de la base de donnée
-            await dataBase.Guild.findOneAndDelete({guildID: interaction.guildId})
-            // on recrée la configuration du serveur avec les nouvelles données
-            await createGuildConfig(interaction)
 
+        switch ( interaction.customId ) {
+            case "setup:reset:true":
+                // on supprime le salon et le rôle mute precedent crée
+                interaction.guild.channels.delete(serverConfig.logChannel, `Réinitialisation du serveur demandé par ${interaction.user.username}`)
+                interaction.guild.roles.delete(serverConfig.muteID, `Réinitialisation du serveur demandé par ${interaction.user.username}`)
+                // on supprime le document de la base de donnée
+                await dataBase.Guild.findOneAndDelete({guildID: interaction.guildId})
+                // on recrée la configuration du serveur avec les nouvelles données
+                await createGuildConfig(interaction, oldInteraction)
+                break;
+            case "setup:reset:false":
+                await oldInteraction.deleteReply();
+                await interaction.reply({content: "La réinitialisation du serveur a été annulée", ephemeral: true})
+                commandCache.del(`setup:interaction:${interaction.user.id}`)
+                break;
         }
     }
 }
