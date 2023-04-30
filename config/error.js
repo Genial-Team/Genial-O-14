@@ -1,5 +1,8 @@
 module.exports = {
     fr:{
+        configError: {
+            serverMustBeConfigured : "Votre serveur doit être configuré pour avoir accès à cette fonctionnalité (faites /setup pour le configuré)"
+        },
         commandError:{
             commonError : "une erreur est survenue, merci de re-essayez plus tard",
             ProcessError : "Une erreur interne s'est produite, merci de re-essayez plus tard ou de contacté l'équipe de développement",
@@ -10,6 +13,9 @@ module.exports = {
         }
     },
     en:{
+        configError: {
+            serverMustBeConfigured : "Your server must be configured to have access to this feature (do /setup to configure it)"
+        },
         commandError:{
             commonError : "an error occurred, please try again later",
         },
