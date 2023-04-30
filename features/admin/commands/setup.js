@@ -41,7 +41,20 @@ async function createGuildConfig(interaction, oldInteraction) {
                 muteID: role.id,
                 logChannel: channel.id
             }).then(() => {
-                interaction.guild.channels.cache.filter((channel) => channel.type === ChannelType.GuildText).forEach((channel) => {
+                interaction.guild.channels.cache.filter((channel) => channel.type === ChannelType.GuildText ).forEach((channel) => {
+                    channel.permissionOverwrites.edit(role.id, {
+                        SendMessages: false,
+                        AddReactions: false,
+                        Speak: false,
+                        SendMessagesInThreads: false,
+                        SendTTSMessages: false,
+                        //SendVoiceMessages: false,
+                        Stream: false,
+                        UseSoundboard: false,
+                        UseEmbeddedActivities: false,
+                    })
+                })
+                interaction.guild.channels.cache.filter((channel) => channel.type === ChannelType.GuildVoice).forEach((channel) => {
                     channel.permissionOverwrites.edit(role.id, {
                         SendMessages: false,
                         AddReactions: false,
@@ -87,7 +100,9 @@ async function createGuildConfig(interaction, oldInteraction) {
                     })
                 })
                 //si le document n'a pas était créé, on envoie un message d'erreur
-            }).catch((err) => {
+            }).catch(async (err) => {
+                await oldInteraction.deleteReply();
+                commandCache.del(`setup:interaction:${interaction.user.id}`)
                 return interaction.reply({
                     content: error.fr.commandError.commonError,
                     components: [],
