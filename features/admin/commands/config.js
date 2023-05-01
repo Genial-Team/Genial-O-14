@@ -198,6 +198,9 @@ module.exports = {
                 break;
             case "config:welcomeChannel":
 
+                /**
+                 * TODO: finir le message d'accueil au complet
+                 */
                 const newWelcomeChannelId = interaction.values[0];
 
                 await dataBase.Guild.findOneAndUpdate({guildID: interaction.guild.id}, {
