@@ -1,8 +1,10 @@
 const { SlashCommandBuilder, EmbedBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ModalBuilder,ButtonStyle,
-    ButtonBuilder, ChannelType, PermissionFlagsBits, StringSelectMenuBuilder, StringSelectMenuOptionBuilder
+    ButtonBuilder, ChannelType, PermissionFlagsBits, StringSelectMenuBuilder, StringSelectMenuOptionBuilder,
+    ChannelSelectMenuBuilder
 } = require("discord.js");
 const getServerConfig = require("../../../modules/getServerConfig");
-const formatWelcomeText = require("../../../modules/formatWelcomeText")
+const formatWelcomeText = require("../../../modules/formatWelcomeText");
+const sendAlertToLogChannel = require("../../../modules/sendAlertToLogChannel");
 module.exports = {
     config: {
         name: "config",
@@ -43,15 +45,15 @@ module.exports = {
                 },
                 {
                     name: ":pencil: | message supprimé",
-                    value: guildData.logMessage ? "✅prêt" : "⛔non configuré"
+                    value: guildData.logMessage ? "prêt" : "non configuré / désactivé"
                 },
                 {
                     name: ":no_entry_sign: | ban enregistré",
-                    value: guildData.banAdd ? "✅prêt" : "⛔non configuré"
+                    value: guildData.banAdd ? "prêt" : "non configuré / désactivé"
                 },
                 {
                     name: ":arrows_counterclockwise: | ban révoqué",
-                    value: guildData.banRemove ? "✅prêt" : "⛔non configuré"
+                    value: guildData.banRemove ? "prêt" : "non configuré / désactivé"
                 }
             )
             .setColor(colorScheme.default.info)
@@ -60,7 +62,7 @@ module.exports = {
         const navigationSelect = new ActionRowBuilder()
             .addComponents(
                 new StringSelectMenuBuilder()
-                    .setCustomId('config:navbar:'+ interaction.guild.id)
+                    .setCustomId('config:navbar')
                     .setPlaceholder('que veux-tu configurer ?')
                     .addOptions(
                         new StringSelectMenuOptionBuilder()
@@ -70,7 +72,7 @@ module.exports = {
                         new StringSelectMenuOptionBuilder()
                             .setLabel("le message d'accueil")
                             .setDescription("un message sera envoyé pour l'accueillir le membre")
-                            .setValue('welcomeText'),
+                            .setValue('welcomeChannel'),
                         new StringSelectMenuOptionBuilder()
                             .setLabel('les bans créent/révoqué')
                             .setDescription('les bans / débans serons sauvegarder par le bot')
@@ -90,56 +92,134 @@ module.exports = {
 
         if ( !serverConfig ) return interaction.reply({content: error.fr.configError.serverMustBeConfigured, ephemeral: true})
 
-        switch (interaction.values[0]) {
-            case "messageDelete":
+        console.log(interaction)
+
+
+
+        switch (interaction.customId) {
+            case "config:navbar" :
+
+                switch (interaction.values[0]) {
+                    case "messageDelete":
+
+                        await dataBase.Guild.findOneAndUpdate({guildID: interaction.guild.id}, {
+                            $set: {
+                                syslog: {
+                                    messageDelete: !serverConfig.syslog.messageDelete,
+                                    banAdd: serverConfig.syslog.banAdd,
+                                    banRemove: serverConfig.syslog.banRemove,
+                                }
+                            }
+                        })
+
+                        await sendAlertToLogChannel(
+                            `la sauvegarde des messages supprimés a été ${!serverConfig.syslog.messageDelete ? "activé" : "désactivé"} par ${interaction.member}`,
+                            interaction,
+                            serverConfig.logChannel
+                        )
+
+                        interaction.reply({
+                            content: `les messages supprimé ${
+                                !serverConfig.syslog.messageDelete
+                                    ? `serons sauvegardé dans ${await interaction.guild.channels.fetch(serverConfig.logChannel)}`
+                                    : `ne serons plus sauvegardé`
+                            }`,
+                            ephemeral: true
+                        })
+                        break;
+                    case "welcomeChannel":
+
+                        if ( serverConfig.wChannel ) {
+                            await dataBase.Guild.findOneAndUpdate({guildID: interaction.guild.id}, {
+                                $set: {
+                                    wChannel: null
+                                }
+                            })
+                            interaction.reply({
+                                content: "le message d'accueil à été désactivé",
+                                ephemeral: true
+                            })
+                        } else {
+                            const navigationSelect = new ActionRowBuilder()
+                                .addComponents(
+                                    new ChannelSelectMenuBuilder()
+                                        .setPlaceholder("où devrais-je envoyer le message ?")
+                                        .setCustomId('config:welcomeChannel')
+                                        .setChannelTypes(ChannelType.GuildText)
+                                        .setMaxValues(1)
+                                        .setMinValues(1)
+                                )
+
+                            interaction.reply({
+                                content: "sélectionne le salon où je devrais envoyer le message d'accueil parmi la liste ci-dessous",
+                                components: [navigationSelect],
+                                ephemeral: true
+                            })
+                        }
+
+
+                        break;
+                    case "bans":
+
+                        await dataBase.Guild.findOneAndUpdate({guildID: interaction.guild.id}, {
+                            $set: {
+                                syslog: {
+                                    messageDelete: serverConfig.syslog.messageDelete,
+                                    banAdd: !serverConfig.syslog.banAdd,
+                                    banRemove: !serverConfig.syslog.banRemove,
+                                }
+                            }
+                        })
+
+                        await sendAlertToLogChannel(
+                            `les notifications de bannissement / annulation de bannissement ont été ${!serverConfig.syslog.banAdd ? "activé" : "désactivé"} par ${interaction.member}`,
+                            interaction,
+                            serverConfig.logChannel
+                        )
+
+                        interaction.reply({
+                            content: `les notifications de bannissement / annulation de bannissement ${
+                                !serverConfig.syslog.messageDelete
+                                    ? `serons envoyé dans ${await interaction.guild.channels.fetch(serverConfig.logChannel)}`
+                                    : `ne serons plus envoyé`
+                            }`,
+                            ephemeral: true
+                        })
+                        break;
+                    default:
+                        console.log(interaction.value)
+                        interaction.reply({
+                            content: error.fr.commandError.noArgumentFound,
+                            ephemeral: true
+                        })
+                        break;
+                }
+
+                break;
+            case "config:welcomeChannel":
+
+                const newWelcomeChannelId = interaction.values[0];
 
                 await dataBase.Guild.findOneAndUpdate({guildID: interaction.guild.id}, {
                     $set: {
-                        syslog: {
-                            messageDelete: !serverConfig.syslog.messageDelete,
-                            banAdd: serverConfig.syslog.banAdd,
-                            banRemove: serverConfig.syslog.banRemove,
-                        }
+                        wChannel: newWelcomeChannelId.toString()
                     }
                 })
 
-                await interaction.guild.channels.fetch(serverConfig.logChannel).send({
-                    embeds:[
-                        new EmbedBuilder()
-                            .setColor(colorScheme.default.info)
-                            .setFooter({text: interaction.member.user.username, iconURL: interaction.member.avatarURL()})
-                            .setDescription(`${interaction.member} a **${ !serverConfig.syslog.messageDelete ? "activé" : "désactivé" }** la sauvegarde des messages supprimé`)
-                    ]
-                })
+                await sendAlertToLogChannel(
+                    `le message d'accueil a été activé et le salon d'envoi a été défini sur ${await interaction.guild.channels.fetch(newWelcomeChannelId) } par ${interaction.member}`,
+                    interaction,
+                    serverConfig.logChannel
+                )
 
                 interaction.reply({
-                    content: `les messages supprimé ${
-                        !serverConfig.syslog.messageDelete
-                            ? `serons sauvegardé dans ${await interaction.guild.channels.fetch(serverConfig.logChannel)}`
-                            : `ne serons plus sauvegardé`
-                    }`,
+                    content: `le message d'accueil a été activé et le salon d'envoi a été défini sur ${await interaction.guild.channels.fetch(newWelcomeChannelId) }`,
                     ephemeral: true
                 })
-                break;
-            case "welcomeText":
-                interaction.reply({
-                    content: "welcome text",
-                    ephemeral: true
-                })
-                break;
-            case "bans":
-                interaction.reply({
-                    content: "bans",
-                    ephemeral: true
-                })
-                break;
-            default:
-                console.log(interaction.value)
-                interaction.reply({
-                    content: error.fr.commandError.noArgumentFound,
-                    ephemeral: true
-                })
+
                 break;
         }
+
+
     }
 }
