@@ -17,16 +17,18 @@ module.exports = {
                 commandList.commands.push(command.initCommand())
                 commandList.commandsOptionsResponse.push({
                     name: command.config.name,
+                    config: command.config,
+                    execute: command.execute,
                     modalResponse: command.modalResponse ? command.modalResponse : null,
                     buttonResponse: command.buttonResponse ? command.buttonResponse : null
                 })
                 //crée l'interaction pour répondre à la commande
-                client.on( "interactionCreate", async (interaction) => {
-                    if (interaction.commandName === command.config.name) {
-                        if ( !(command.config.canBeUsedOnDM || interaction.inGuild())) return interaction.reply(error.fr.checkingValidity.canNotBeUsedOnDM);
-                        await command.execute(interaction)
-                    }
-                })
+                // client.on( "interactionCreate", async (interaction) => {
+                //     if (interaction.commandName === command.config.name) {
+                //         if ( !(command.config.canBeUsedOnDM || interaction.inGuild())) return interaction.reply(error.fr.checkingValidity.canNotBeUsedOnDM);
+                //         await command.execute(interaction)
+                //     }
+                // })
 
             } )
 

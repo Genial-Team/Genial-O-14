@@ -26,6 +26,11 @@ module.exports = {
                 break;
             case 2:
                 console.log(`interaction type is: ${interactionType} (APPLICATION_COMMAND)`)
+                const command = commandList.commandsOptionsResponse.find( (c) => c.name === interaction.commandName )
+
+                if ( !(command.config.canBeUsedOnDM || interaction.inGuild())) return interaction.reply(error.fr.checkingValidity.canNotBeUsedOnDM);
+                await command.execute(interaction)
+
                 break;
             case 3:
                 // on exécute la fonction buttonResponse de la commande associée

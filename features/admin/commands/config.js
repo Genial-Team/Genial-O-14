@@ -2,6 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder, TextInputBuilder, TextInputStyle, Act
     ButtonBuilder, ChannelType, PermissionFlagsBits, StringSelectMenuBuilder, StringSelectMenuOptionBuilder,
     ChannelSelectMenuBuilder
 } = require("discord.js");
+
 const getServerConfig = require("../../../modules/getServerConfig");
 const formatWelcomeText = require("../../../modules/formatWelcomeText");
 const sendAlertToLogChannel = require("../../../modules/sendAlertToLogChannel");
@@ -80,6 +81,12 @@ module.exports = {
                     )
             );
 
+        commandCache.mset([
+            { key: `configInteractionToken${interaction.user.id}`, val: interaction.token.toString()  },
+            { key: `configInteractionWclient${interaction.user.id}`, val: interaction.webhook.client.toString()  },
+            { key: `configInteractionWtoken${interaction.user.id}`, val: interaction.webhook.token.toString() }
+        ])
+
         await interaction.reply({
             ephemeral: true,
             embeds: [configurationEmbed],
@@ -88,12 +95,20 @@ module.exports = {
 
     },
     async buttonResponse(interaction) {
+
+        const fetchedCache = commandCache.mget([
+            `configInteractionToken${interaction.user.id}`,
+            `configInteractionWclient${interaction.user.id}`,
+            `configInteractionWtoken${interaction.user.id}`,
+        ]);
+
+        let oldInteraction = interaction;
+        oldInteraction.token = fetchedCache[`configInteractionToken${interaction.user.id}`];
+        oldInteraction.webhook.client = fetchedCache[`configInteractionWclient${interaction.user.id}`];
+        oldInteraction.webhook.token = fetchedCache[`configInteractionWtoken${interaction.user.id}`];
         const serverConfig = await getServerConfig(interaction.guild.id);
 
         if ( !serverConfig ) return interaction.reply({content: error.fr.configError.serverMustBeConfigured, ephemeral: true})
-
-        console.log(interaction)
-
 
 
         switch (interaction.customId) {
@@ -118,6 +133,18 @@ module.exports = {
                             serverConfig.logChannel
                         )
 
+                        try {
+                            await oldInteraction.deleteReply()
+                        } catch (e){
+                            console.log(e)
+                        }
+
+                        commandCache.del([
+                            `configInteractionToken${interaction.user.id}`,
+                            `configInteractionWclient${interaction.user.id}`,
+                            `configInteractionWtoken${interaction.user.id}`,
+                        ])
+
                         interaction.reply({
                             content: `les messages supprimé ${
                                 !serverConfig.syslog.messageDelete
@@ -135,6 +162,25 @@ module.exports = {
                                     wChannel: null
                                 }
                             })
+
+                            await sendAlertToLogChannel(
+                                `le message d'accueil a été activé et le salon d'envoi on été désactivé par ${interaction.member}`,
+                                interaction,
+                                serverConfig.logChannel
+                            )
+
+                            try {
+                                await oldInteraction.deleteReply()
+                            } catch (e){
+                                console.log(e)
+                            }
+
+                            commandCache.del([
+                                `configInteractionToken${interaction.user.id}`,
+                                `configInteractionWclient${interaction.user.id}`,
+                                `configInteractionWtoken${interaction.user.id}`,
+                            ])
+
                             interaction.reply({
                                 content: "le message d'accueil à été désactivé",
                                 ephemeral: true
@@ -149,6 +195,18 @@ module.exports = {
                                         .setMaxValues(1)
                                         .setMinValues(1)
                                 )
+
+                            try {
+                                await oldInteraction.deleteReply()
+                            } catch (e){
+                                console.log(e)
+                            }
+
+                            commandCache.del([
+                                `configInteractionToken${interaction.user.id}`,
+                                `configInteractionWclient${interaction.user.id}`,
+                                `configInteractionWtoken${interaction.user.id}`,
+                            ])
 
                             interaction.reply({
                                 content: "sélectionne le salon où je devrais envoyer le message d'accueil parmi la liste ci-dessous",
@@ -177,9 +235,21 @@ module.exports = {
                             serverConfig.logChannel
                         )
 
+                        try {
+                            await oldInteraction.deleteReply()
+                        } catch (e){
+                            console.log(e)
+                        }
+
+                        commandCache.del([
+                            `configInteractionToken${interaction.user.id}`,
+                            `configInteractionWclient${interaction.user.id}`,
+                            `configInteractionWtoken${interaction.user.id}`,
+                        ])
+
                         interaction.reply({
                             content: `les notifications de bannissement / annulation de bannissement ${
-                                !serverConfig.syslog.messageDelete
+                                !serverConfig.syslog.banAdd
                                     ? `serons envoyé dans ${await interaction.guild.channels.fetch(serverConfig.logChannel)}`
                                     : `ne serons plus envoyé`
                             }`,
@@ -198,9 +268,6 @@ module.exports = {
                 break;
             case "config:welcomeChannel":
 
-                /**
-                 * TODO: finir le message d'accueil au complet
-                 */
                 const newWelcomeChannelId = interaction.values[0];
 
                 await dataBase.Guild.findOneAndUpdate({guildID: interaction.guild.id}, {
@@ -214,6 +281,9 @@ module.exports = {
                     interaction,
                     serverConfig.logChannel
                 )
+                /**
+                 * TODO: terminé de supprimé le message temporaire
+                 */
 
                 interaction.reply({
                     content: `le message d'accueil a été activé et le salon d'envoi a été défini sur ${await interaction.guild.channels.fetch(newWelcomeChannelId) }`,
