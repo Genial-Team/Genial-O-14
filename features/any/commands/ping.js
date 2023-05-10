@@ -13,6 +13,7 @@ module.exports = {
     execute: async function(interaction) {
         await interaction.deferReply()
 
+
         return interaction.editReply({ content: `pong !` })
     }
 }

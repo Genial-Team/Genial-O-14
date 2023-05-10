@@ -134,7 +134,7 @@ module.exports = {
             interactionWebhookClient: interaction.webhook.client,
             interactionWebhookToken: interaction.webhook.token
         }
-        commandCache.set(`setup:interaction:${interaction.user.id}`, interactionCache, 900);
+        commandCache.set(`setup:interaction:${interaction.user.id}`, interactionCache);
 
 
         //import server config and chech error

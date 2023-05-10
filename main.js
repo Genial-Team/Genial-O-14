@@ -3,7 +3,8 @@ const path = require("path");
 require("dotenv").config({ path: path.resolve( `${__dirname}/config/.env` ) });
 const { Client, GatewayIntentBits, Partials, REST, Routes } = require("discord.js");
 const colors = require('colors');
-const NodeCache = require("node-cache");
+const Cache = require("./class/cache");
+
 
 const client = new Client({
     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildMembers, GatewayIntentBits.MessageContent],
@@ -19,7 +20,7 @@ global.error = require("./config/error");
 global.dataBase = require("./database/getModels")
 global.colors = colors;
 global.colorScheme = require("./config/colorScheme");
-global.commandCache = new NodeCache();
+global.commandCache = new Cache();
 
 
 // load all available command

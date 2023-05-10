@@ -22,14 +22,6 @@ module.exports = {
                     modalResponse: command.modalResponse,
                     buttonResponse: command.buttonResponse
                 })
-                //crée l'interaction pour répondre à la commande
-                // client.on( "interactionCreate", async (interaction) => {
-                //     if (interaction.commandName === command.config.name) {
-                //         if ( !(command.config.canBeUsedOnDM || interaction.inGuild())) return interaction.reply(error.fr.checkingValidity.canNotBeUsedOnDM);
-                //         await command.execute(interaction)
-                //     }
-                // })
-
             } )
 
         console.log("all basic command initialized".green)

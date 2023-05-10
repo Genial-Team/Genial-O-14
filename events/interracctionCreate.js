@@ -29,6 +29,7 @@ module.exports = {
                 const command = commandList.commandsOptionsResponse.find( (c) => c.name === interaction.commandName )
 
                 if ( !(command.config.canBeUsedOnDM || interaction.inGuild())) return interaction.reply(error.fr.checkingValidity.canNotBeUsedOnDM);
+
                 await command.execute(interaction)
 
                 break;
