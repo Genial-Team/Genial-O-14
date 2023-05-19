@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ModalBuilder,ButtonStyle,
     ButtonBuilder, ChannelType, PermissionFlagsBits
 } = require("discord.js");
+const canExecuteAdminCommand = require("../../../modules/canExecuteAdminCommand")
 
 async function createGuildConfig(interaction, oldInteraction) {
     // crée le salon de logs
@@ -126,6 +127,11 @@ module.exports = {
           .setDescription("🛠️ | configure votre serveur")
     },
     execute: async function(interaction) {
+
+        if ( !canExecuteAdminCommand ) return interaction.reply({
+            content: error.fr.permissions.dontHaveAdminPermission,
+            ephemeral: true
+        })
 
         //on stocke l'interaction dans le cache
         let interactionCache = {

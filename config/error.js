@@ -1,5 +1,8 @@
 module.exports = {
     fr:{
+        permissions: {
+          dontHaveAdminPermission : "Vous devez être administrateur pour exécuter cette commande"
+        },
         configError: {
             serverMustBeConfigured : "Votre serveur doit être configuré pour avoir accès à cette fonctionnalité (faites /setup pour le configuré)"
         },
@@ -13,6 +16,9 @@ module.exports = {
         }
     },
     en:{
+        permissions: {
+            dontHaveAdminPermission : "You must be an administrator to run this command"
+        },
         configError: {
             serverMustBeConfigured : "Your server must be configured to have access to this feature (do /setup to configure it)"
         },

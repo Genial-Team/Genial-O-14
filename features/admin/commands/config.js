@@ -6,6 +6,33 @@ const { SlashCommandBuilder, EmbedBuilder, TextInputBuilder, TextInputStyle, Act
 const getServerConfig = require("../../../modules/getServerConfig");
 const formatWelcomeText = require("../../../modules/formatWelcomeText");
 const sendAlertToLogChannel = require("../../../modules/sendAlertToLogChannel");
+const canExecuteAdminCommand = require("../../../modules/canExecuteAdminCommand");
+
+function saveInteraction(interaction){
+    commandCache.set( `configInteractionToken${interaction.user.id}`, interaction.token.toString())
+    commandCache.set( `configInteractionWclient${interaction.user.id}`, interaction.webhook.client.toString() )
+    commandCache.set( `configInteractionWtoken${interaction.user.id}`, interaction.webhook.token.toString() )
+}
+function deleteInteraction(interaction){
+    commandCache.delete(`configInteractionToken${interaction.user.id}`)
+    commandCache.delete(`configInteractionWclient${interaction.user.id}`)
+    commandCache.delete(`configInteractionWtoken${interaction.user.id}`)
+}
+function getInteraction(interaction){
+    const fetchedCache = {
+        configInteractionToken: commandCache.get( `configInteractionToken${interaction.user.id}`),
+        configInteractionWclient: commandCache.get(`configInteractionWclient${interaction.user.id}`),
+        configInteractionWtoken: commandCache.get(`configInteractionWtoken${interaction.user.id}`)
+    }
+
+    let oldInteraction = interaction;
+    oldInteraction.token = fetchedCache[`configInteractionToken`];
+    oldInteraction.webhook.client = fetchedCache[`configInteractionWclient`];
+    oldInteraction.webhook.token = fetchedCache[`configInteractionWtoken`];
+
+    return oldInteraction;
+}
+
 module.exports = {
     config: {
         name: "config",
@@ -18,6 +45,13 @@ module.exports = {
           .setDescription("🛠️ | configure les journaux que le Bot enverra")
     },
     execute: async function(interaction) {
+
+
+        if ( !canExecuteAdminCommand ) return interaction.reply({
+            content: error.fr.permissions.dontHaveAdminPermission,
+            ephemeral: true
+        })
+
         const serverConfig = await getServerConfig(interaction.guild.id);
 
         const guildData = {
@@ -81,10 +115,7 @@ module.exports = {
                     )
             );
 
-        commandCache.set( `configInteractionToken${interaction.user.id}`, interaction.token.toString())
-        commandCache.set( `configInteractionWclient${interaction.user.id}`, interaction.webhook.client.toString() )
-        commandCache.set( `configInteractionWtoken${interaction.user.id}`, interaction.webhook.token.toString() )
-
+       saveInteraction(interaction)
         await interaction.reply({
             ephemeral: true,
             embeds: [configurationEmbed],
@@ -94,16 +125,7 @@ module.exports = {
     },
     async buttonResponse(interaction) {
 
-        const fetchedCache = {
-            configInteractionToken: commandCache.get( `configInteractionToken${interaction.user.id}`),
-            configInteractionWclient: commandCache.get(`configInteractionWclient${interaction.user.id}`),
-            configInteractionWtoken: commandCache.get(`configInteractionWtoken${interaction.user.id}`)
-        }
 
-        let oldInteraction = interaction;
-        oldInteraction.token = fetchedCache[`configInteractionToken`];
-        oldInteraction.webhook.client = fetchedCache[`configInteractionWclient`];
-        oldInteraction.webhook.token = fetchedCache[`configInteractionWtoken`];
         const serverConfig = await getServerConfig(interaction.guild.id);
 
         if ( !serverConfig ) return interaction.reply({content: error.fr.configError.serverMustBeConfigured, ephemeral: true})
@@ -132,16 +154,12 @@ module.exports = {
                         )
 
                         try {
-                            await oldInteraction.deleteReply()
+                            await getInteraction(interaction).deleteReply()
                         } catch (e){
                             console.log(e)
                         }
 
-                        commandCache.delete(`configInteractionToken${interaction.user.id}`)
-                        commandCache.delete(`configInteractionWclient${interaction.user.id}`)
-                        commandCache.delete(`configInteractionWtoken${interaction.user.id}`)
-
-                        console.log(commandCache.get())
+                       deleteInteraction(interaction)
 
                         interaction.reply({
                             content: `les messages supprimé ${
@@ -167,20 +185,14 @@ module.exports = {
                                 serverConfig.logChannel
                             )
 
-                            try {
-                                await oldInteraction.deleteReply()
-                            } catch (e){
-                                console.log(e)
-                            }
 
-                            commandCache.delete(`configInteractionToken${interaction.user.id}`)
-                            commandCache.delete(`configInteractionWclient${interaction.user.id}`)
-                            commandCache.delete(`configInteractionWtoken${interaction.user.id}`)
+                                await getInteraction(interaction).deleteReply()
 
                             interaction.reply({
                                 content: "le message d'accueil à été désactivé",
                                 ephemeral: true
                             })
+
                         } else {
                             const navigationSelect = new ActionRowBuilder()
                                 .addComponents(
@@ -192,23 +204,22 @@ module.exports = {
                                         .setMinValues(1)
                                 )
 
-                            try {
-                                await oldInteraction.deleteReply()
-                            } catch (e){
-                                console.log(e)
-                            }
+                                getInteraction(interaction).deleteReply()
+                                    .catch((err) => {
+                                        console.log(err)
+                                    })
 
-                            commandCache.delete(`configInteractionToken${interaction.user.id}`)
-                            commandCache.delete(`configInteractionWclient${interaction.user.id}`)
-                            commandCache.delete(`configInteractionWtoken${interaction.user.id}`)
+
+                            deleteInteraction(interaction)
+                            saveInteraction(interaction)
 
                             interaction.reply({
                                 content: "sélectionne le salon où je devrais envoyer le message d'accueil parmi la liste ci-dessous",
                                 components: [navigationSelect],
                                 ephemeral: true
                             })
-                        }
 
+                        }
 
                         break;
                     case "bans":
@@ -230,14 +241,12 @@ module.exports = {
                         )
 
                         try {
-                            await oldInteraction.deleteReply()
+                            await getInteraction(interaction).deleteReply()
                         } catch (e){
                             console.log(e)
                         }
 
-                        commandCache.delete(`configInteractionToken${interaction.user.id}`)
-                        commandCache.delete(`configInteractionWclient${interaction.user.id}`)
-                        commandCache.delete(`configInteractionWtoken${interaction.user.id}`)
+                        deleteInteraction(interaction)
 
                         interaction.reply({
                             content: `les notifications de bannissement / annulation de bannissement ${
@@ -277,7 +286,10 @@ module.exports = {
                  * TODO: terminé de supprimé le message temporaire
                  */
 
-                interaction.reply({
+
+                await getInteraction(interaction).deleteReply();
+
+                await interaction.reply({
                     content: `le message d'accueil a été activé et le salon d'envoi a été défini sur ${await interaction.guild.channels.fetch(newWelcomeChannelId) }`,
                     ephemeral: true
                 })
