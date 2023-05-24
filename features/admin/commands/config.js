@@ -79,9 +79,13 @@ module.exports = {
                             .setDescription('les messages supprimés pourront être sauvegardés')
                             .setValue('messageDelete'),
                         new StringSelectMenuOptionBuilder()
-                            .setLabel("le message d'accueil")
+                            .setLabel("le salon du message d'accueil")
                             .setDescription("un message sera envoyé pour l'accueillir le membre")
                             .setValue('welcomeChannel'),
+                        new StringSelectMenuOptionBuilder()
+                            .setLabel("le contenu du message d'accueil")
+                            .setDescription("le contenu du message d'accueil")
+                            .setValue("welcomeMessage"),
                         new StringSelectMenuOptionBuilder()
                             .setLabel('les bans créent/révoqué')
                             .setDescription('les bans / débans serons sauvegarder par le bot')
@@ -167,7 +171,7 @@ module.exports = {
                                 .addComponents(
                                     new ChannelSelectMenuBuilder()
                                         .setPlaceholder("où devrais-je envoyer le message ?")
-                                        .setCustomId('config:welcomeChannel')
+                                        .setCustomId('config:welcomeChannel:select')
                                         .setChannelTypes(ChannelType.GuildText)
                                         .setMaxValues(1)
                                         .setMinValues(1)
@@ -180,6 +184,50 @@ module.exports = {
                                 ephemeral: true
                             })
                         }
+                        break;
+                    case "welcomeMessage":
+                        /**
+                         *             .replaceAll("{guild.count}", member.guild.memberCount)
+                         * @type {EmbedBuilder}
+                         */
+                        const exempleEmbed = new EmbedBuilder()
+                            .setTitle("option et règle du message d'accueil")
+                            .setDescription("votre message ne doit pas contenir plus de 1024 caractères, mais vous trouverai ci-dessous des option pour formater votre texte")
+                            .addFields({
+                                name:"{mention}",
+                                value: `mentionne le nouveau membre là ou vous le souhaitez (exemple: ${interaction.member})`
+                            },{
+                                name:"{server}",
+                                value: `intègre le nom du server là ou vous le souhaitez (exemple: ${interaction.guild.name})`
+                            },{
+                                name:"{pseudo}",
+                                value: `intègre le nom du nouveau membre là ou vous le souhaitez (exemple: ${interaction.member.user.username})`
+                            },{
+                                name: "{compteur}",
+                                value: `intègre le nombre de membre sur le serveur là ou vous le souhaitez (exemple: ${interaction.guild.memberCount})`
+                            })
+                            .setColor(colorScheme.default.info)
+                            .setFooter({text: interaction.member.user.username, iconURL: interaction.member.avatarURL()})
+
+                        const actionRow = new ActionRowBuilder()
+                            .addComponents(
+                                new ButtonBuilder()
+                                    .setCustomId("config:welcomeMessage:true")
+                                    .setLabel("Oui, je souhaite continuer")
+                                    .setStyle(ButtonStyle.Primary),
+                                new ButtonBuilder()
+                                    .setCustomId("config:welcomeMessage:false")
+                                    .setLabel("Non, je ne souhaite pas continuer")
+                                    .setStyle(ButtonStyle.Danger)
+                            )
+
+                        interaction.update({
+                            content: "",
+                            embeds: [exempleEmbed],
+                            components: [actionRow],
+                            ephemeral: true,
+                        })
+
                         break;
                     case "bans":
 
@@ -221,7 +269,31 @@ module.exports = {
                         break;
                 }
                 break;
-            case "config:welcomeChannel":
+            case "config:welcomeMessage:true":
+                const contentInputModal = new TextInputBuilder()
+                    .setCustomId(`config:welcomeMessage:content`)
+                    .setPlaceholder("Bienvenue à toi {mention}")
+                    .setLabel("contenu du message")
+                    .setRequired(true)
+                    .setStyle(TextInputStyle.Paragraph);
+
+                const contentModal = new ModalBuilder()
+                    .setTitle("message de bienvenue")
+                    .setCustomId("config:welcomeMessage:modal")
+
+                contentModal.addComponents( new ActionRowBuilder().addComponents(contentInputModal) )
+
+                await interaction.showModal(contentModal)
+                break;
+            case "config:welcomeMessage:false":
+                interaction.update({
+                    content: "modification annulé",
+                    embeds:[],
+                    components:[],
+                    ephemeral: true,
+                })
+                break;
+            case "config:welcomeChannel:select":
 
                 const newWelcomeChannelId = interaction.values[0];
 
@@ -254,5 +326,35 @@ module.exports = {
         }
 
 
+    },
+    modalResponse: async function(interaction, modalData) {
+
+        if ( !modalData.fields[0].value ) return interaction.reply({ content: error.fr.commandError.noArgumentFound, ephemeral: true });
+        const serverConfig = await getServerConfig(interaction.guild.id);
+
+
+        const embed = new EmbedBuilder()
+            .setTitle("confirmation de mise à jours du message d'accueil")
+            .addFields({
+                name:"le message de bienvenue à été definis sur",
+                value: modalData.fields[0].value.toString()
+            })
+            .setColor(colorScheme.default.success)
+            .setFooter({text: interaction.member.user.username, iconURL: interaction.member.displayAvatarURL()})
+            .setTimestamp();
+
+        await dataBase.Guild.findOneAndUpdate({guildID: interaction.guild.id}, {
+            $set: {
+                welcomeText: modalData.fields[0].value
+            }
+        })
+
+        await sendAlertToLogChannel(
+            `${interaction.member} à remplacer le message de bienvenue par \n ${modalData.fields[0].value} `,
+            interaction,
+            serverConfig.logChannel
+        )
+
+        interaction.update({ embeds: [embed], components: [], ephemeral: true })
     }
 }
