@@ -3,7 +3,7 @@ const { SlashCommandBuilder, EmbedBuilder, TextInputBuilder, TextInputStyle, Act
 } = require("discord.js");
 const canExecuteAdminCommand = require("../../../modules/canExecuteAdminCommand")
 
-async function createGuildConfig(interaction, oldInteraction) {
+async function createGuildConfig(interaction) {
     // crée le salon de logs
     interaction.guild.channels.create({
         name: "génial-logs",
@@ -92,21 +92,25 @@ async function createGuildConfig(interaction, oldInteraction) {
 
                         ]
                     })
-                    await oldInteraction.deleteReply();
-                    commandCache.del(`setup:interaction:${interaction.user.id}`)
-                    return interaction.reply({
-                        content: "Le serveur a été réinitialisé",
-                        components: [],
-                        ephemeral: true
-                    })
+                    try {
+                        await interaction.editReply(
+                            "Le serveur a été initialisé"
+                        )
+                    } catch (e){
+                        interaction.update({
+                            content:"Le serveur a été réinitialisé",
+                            components:[],
+                            ephemeral: true
+                        })
+                    }
+                    return;
                 })
                 //si le document n'a pas était créé, on envoie un message d'erreur
             }).catch(async (err) => {
-                await oldInteraction.deleteReply();
-                commandCache.del(`setup:interaction:${interaction.user.id}`)
-                return interaction.reply({
+                return interaction.update({
                     content: error.fr.commandError.commonError,
-                    components: [],
+                    embeds:[],
+                    components:[],
                     ephemeral: true
                 })
             })
@@ -132,16 +136,6 @@ module.exports = {
             content: error.fr.permissions.dontHaveAdminPermission,
             ephemeral: true
         })
-
-        //on stocke l'interaction dans le cache
-        let interactionCache = {
-            interaction: interaction,
-            interactionToken: interaction.token,
-            interactionWebhookClient: interaction.webhook.client,
-            interactionWebhookToken: interaction.webhook.token
-        }
-        commandCache.set(`setup:interaction:${interaction.user.id}`, interactionCache);
-
 
         //import server config and chech error
         const serverConfig = await getServerConfig(interaction.guild.id);
@@ -171,13 +165,6 @@ module.exports = {
 
     },
     buttonResponse: async function(interaction) {
-        //import cache
-        const fetchedCache = commandCache.get(`setup:interaction:${interaction.user.id}`);
-
-        let oldInteraction = fetchedCache.interaction;
-        oldInteraction.token = fetchedCache.interactionToken;
-        oldInteraction.webhook.client = fetchedCache.interactionWebhookClient;
-        oldInteraction.webhook.token = fetchedCache.interactionWebhookToken;
 
         // import server config and chech error
         const serverConfig = await getServerConfig(interaction.guild.id);
@@ -192,12 +179,13 @@ module.exports = {
                 // on supprime le document de la base de donnée
                 await dataBase.Guild.findOneAndDelete({guildID: interaction.guildId})
                 // on recrée la configuration du serveur avec les nouvelles données
-                await createGuildConfig(interaction, oldInteraction)
+                await createGuildConfig(interaction)
                 break;
             case "setup:reset:false":
-                await oldInteraction.deleteReply();
-                await interaction.reply({content: "La réinitialisation du serveur a été annulée", ephemeral: true})
-                commandCache.del(`setup:interaction:${interaction.user.id}`)
+                await interaction.update({
+                    content: "La réinitialisation du serveur a été annulée",
+                    components: [],
+                    ephemeral: true})
                 break;
         }
     }

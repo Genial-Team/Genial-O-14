@@ -9,7 +9,9 @@ module.exports = {
     async execute(channel){
         const serverConfig = await getServerConfig(channel.guild.id);
 
-        if ( channel.type === ChannelType.GuildText || ChannelType.GuildVoice && ( serverConfig && serverConfig.guildID ) ) {
+        if (!serverConfig) return;
+
+        if ( channel.type === ChannelType.GuildText || ChannelType.GuildVoice ) {
             await channel.permissionOverwrites.edit( serverConfig.muteID , {
                 SendMessages: false,
                 AddReactions: false,
