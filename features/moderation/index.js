@@ -17,6 +17,8 @@ module.exports = {
                 commandList.commands.push(command.initCommand())
                 commandList.commandsOptionsResponse.push({
                     name: command.config.name,
+                    config: command.config,
+                    execute: command.execute,
                     modalResponse: command.modalResponse,
                     buttonResponse: command.buttonResponse
                 })

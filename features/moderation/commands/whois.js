@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder} = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder, PermissionsBitField} = require("discord.js");
 module.exports = {
     config: {
         name: "whois",
@@ -15,8 +15,13 @@ module.exports = {
                 .setRequired(true))
     },
     execute: async function(interaction) {
-        await interaction.deferReply()
+        await interaction.deferReply({ ephemeral: true})
         const fetchedMember = interaction.options.getMember("membre");
+
+        if ( !interaction.member.permissions.has(PermissionsBitField.Flags.ManageNicknames) ) return interaction.editReply({
+            content: error.fr.permissions.dontHaveManageNicknamePermission,
+            ephemeral: true,
+        })
 
         function getMemberRoles () {
             if ( fetchedMember.roles.cache.size === 1 ) return "aucun rôle";
