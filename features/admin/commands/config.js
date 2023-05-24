@@ -8,31 +8,6 @@ const formatWelcomeText = require("../../../modules/formatWelcomeText");
 const sendAlertToLogChannel = require("../../../modules/sendAlertToLogChannel");
 const canExecuteAdminCommand = require("../../../modules/canExecuteAdminCommand");
 
-function saveInteraction(interaction){
-    commandCache.set( `configInteractionToken${interaction.user.id}`, interaction.token.toString())
-    commandCache.set( `configInteractionWclient${interaction.user.id}`, interaction.webhook.client.toString() )
-    commandCache.set( `configInteractionWtoken${interaction.user.id}`, interaction.webhook.token.toString() )
-}
-function deleteInteraction(interaction){
-    commandCache.delete(`configInteractionToken${interaction.user.id}`)
-    commandCache.delete(`configInteractionWclient${interaction.user.id}`)
-    commandCache.delete(`configInteractionWtoken${interaction.user.id}`)
-}
-function getInteraction(interaction){
-    const fetchedCache = {
-        configInteractionToken: commandCache.get( `configInteractionToken${interaction.user.id}`),
-        configInteractionWclient: commandCache.get(`configInteractionWclient${interaction.user.id}`),
-        configInteractionWtoken: commandCache.get(`configInteractionWtoken${interaction.user.id}`)
-    }
-
-    let oldInteraction = interaction;
-    oldInteraction.token = fetchedCache[`configInteractionToken`];
-    oldInteraction.webhook.client = fetchedCache[`configInteractionWclient`];
-    oldInteraction.webhook.token = fetchedCache[`configInteractionWtoken`];
-
-    return oldInteraction;
-}
-
 module.exports = {
     config: {
         name: "config",
@@ -45,7 +20,6 @@ module.exports = {
           .setDescription("🛠️ | configure les journaux que le Bot enverra")
     },
     execute: async function(interaction) {
-
 
         if ( !canExecuteAdminCommand ) return interaction.reply({
             content: error.fr.permissions.dontHaveAdminPermission,
@@ -114,8 +88,6 @@ module.exports = {
                             .setValue('bans'),
                     )
             );
-
-       saveInteraction(interaction)
         await interaction.reply({
             ephemeral: true,
             embeds: [configurationEmbed],
@@ -128,12 +100,16 @@ module.exports = {
 
         const serverConfig = await getServerConfig(interaction.guild.id);
 
-        if ( !serverConfig ) return interaction.reply({content: error.fr.configError.serverMustBeConfigured, ephemeral: true})
+        if ( !serverConfig ) return interaction.update({
+            content: error.fr.configError.serverMustBeConfigured,
+            embeds:[],
+            components:[],
+            ephemeral: true
+        })
 
 
         switch (interaction.customId) {
             case "config:navbar" :
-
                 switch (interaction.values[0]) {
                     case "messageDelete":
 
@@ -153,20 +129,14 @@ module.exports = {
                             serverConfig.logChannel
                         )
 
-                        try {
-                            await getInteraction(interaction).deleteReply()
-                        } catch (e){
-                            console.log(e)
-                        }
-
-                       deleteInteraction(interaction)
-
-                        interaction.reply({
+                        interaction.update({
                             content: `les messages supprimé ${
                                 !serverConfig.syslog.messageDelete
                                     ? `serons sauvegardé dans ${await interaction.guild.channels.fetch(serverConfig.logChannel)}`
                                     : `ne serons plus sauvegardé`
                             }`,
+                            embeds:[],
+                            components:[],
                             ephemeral: true
                         })
                         break;
@@ -180,16 +150,15 @@ module.exports = {
                             })
 
                             await sendAlertToLogChannel(
-                                `le message d'accueil a été activé et le salon d'envoi on été désactivé par ${interaction.member}`,
+                                `le message d'accueil a été désactivé par ${interaction.member}`,
                                 interaction,
                                 serverConfig.logChannel
                             )
 
-
-                                await getInteraction(interaction).deleteReply()
-
-                            interaction.reply({
+                            interaction.update({
                                 content: "le message d'accueil à été désactivé",
+                                embeds:[],
+                                components: [],
                                 ephemeral: true
                             })
 
@@ -204,23 +173,13 @@ module.exports = {
                                         .setMinValues(1)
                                 )
 
-                                getInteraction(interaction).deleteReply()
-                                    .catch((err) => {
-                                        console.log(err)
-                                    })
-
-
-                            deleteInteraction(interaction)
-                            saveInteraction(interaction)
-
-                            interaction.reply({
+                            interaction.update({
                                 content: "sélectionne le salon où je devrais envoyer le message d'accueil parmi la liste ci-dessous",
+                                embeds:[],
                                 components: [navigationSelect],
                                 ephemeral: true
                             })
-
                         }
-
                         break;
                     case "bans":
 
@@ -240,32 +199,27 @@ module.exports = {
                             serverConfig.logChannel
                         )
 
-                        try {
-                            await getInteraction(interaction).deleteReply()
-                        } catch (e){
-                            console.log(e)
-                        }
-
-                        deleteInteraction(interaction)
-
-                        interaction.reply({
+                        interaction.update({
                             content: `les notifications de bannissement / annulation de bannissement ${
                                 !serverConfig.syslog.banAdd
                                     ? `serons envoyé dans ${await interaction.guild.channels.fetch(serverConfig.logChannel)}`
                                     : `ne serons plus envoyé`
                             }`,
+                            embeds:[],
+                            components:[],
                             ephemeral: true
                         })
                         break;
                     default:
                         console.log(interaction.value)
-                        interaction.reply({
+                        interaction.update({
                             content: error.fr.commandError.noArgumentFound,
+                            embeds:[],
+                            components:[],
                             ephemeral: true
                         })
                         break;
                 }
-
                 break;
             case "config:welcomeChannel":
 
@@ -286,13 +240,15 @@ module.exports = {
                  * TODO: terminé de supprimé le message temporaire
                  */
 
+                // console.log( await getInteraction(interaction))
 
-                await getInteraction(interaction).deleteReply();
-
-                await interaction.reply({
+                await interaction.update({
                     content: `le message d'accueil a été activé et le salon d'envoi a été défini sur ${await interaction.guild.channels.fetch(newWelcomeChannelId) }`,
+                    embeds:[],
+                    components:[],
                     ephemeral: true
                 })
+                // await getInteraction(interaction).deleteReply();
 
                 break;
         }

@@ -12,12 +12,14 @@ module.exports = class Cache{
     }
 
     get(key){
+        // console.log("[cache] DEBUG >\n", key, this._cache[key]);
         if( key !== undefined ) return this._cache[key];
-        else return this._cache;
+        else return "-1";
     }
 
     delete(key){
         delete this._cache[key];
+
     }
 
 }
