@@ -36,11 +36,6 @@ module.exports = {
             banRemove : serverConfig ? serverConfig.syslog.banRemove : "non configuré",
         }
 
-
-        if ( !serverConfig || !serverConfig.guildID) {
-
-        }
-
         const configurationEmbed = new EmbedBuilder()
             .setTitle(`🛠️ | configuration des journaux`)
             .setFields(
@@ -100,7 +95,6 @@ module.exports = {
 
     },
     async buttonResponse(interaction) {
-
 
         const serverConfig = await getServerConfig(interaction.guild.id);
 
@@ -312,16 +306,12 @@ module.exports = {
                  * TODO: terminé de supprimé le message temporaire
                  */
 
-                // console.log( await getInteraction(interaction))
-
                 await interaction.update({
                     content: `le message d'accueil a été activé et le salon d'envoi a été défini sur ${await interaction.guild.channels.fetch(newWelcomeChannelId) }`,
                     embeds:[],
                     components:[],
                     ephemeral: true
                 })
-                // await getInteraction(interaction).deleteReply();
-
                 break;
         }
 

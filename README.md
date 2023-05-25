@@ -2,4 +2,15 @@
 une template pour Génial-O faite en javascript pour discord.js@14
 
 # todo
-- [] create a custom class who manage a cache.json file to fix the node-cache error
+### create the following event
+- [ ] deleted message send in log channel if feature is enable 
+- [ ] ban / unban send in log channel if feature enable
+
+### create the following command
+- [ ] ban ( member reason )
+- [ ] unban ( member reason )
+- [ ] mute ( member time reason )
+- [ ] warn ( member reason )
+- [ ] unwarn ( member rason )
+- [ ] history ( member view | delete )
+  
