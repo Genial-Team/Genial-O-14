@@ -15,7 +15,7 @@ module.exports = {
             .addNumberOption(option => {
                 return option
                     .setName("message")
-                    .setDescription("le nombre de message à supprimé (les messages de plus de 14 jours ne peuvent pas être supprimé)")
+                    .setDescription("le nombre de message à supprimer (les messages de plus de 14 jours ne peuvent pas être supprimé)")
                     .setMinValue(1)
                     .setMaxValue(100)
                     .setRequired(true)
@@ -29,6 +29,8 @@ module.exports = {
             content: error.fr.permissions.dontHaveManageMessagePermission,
             ephemeral: true,
         })
+
+        console.log( interaction.channel.messages.lastMessage ) ;
 
         interaction.channel.bulkDelete(desiredNumber)
             .then( async (result) => {
@@ -47,6 +49,7 @@ module.exports = {
                 })
             } )
             .catch( (err)=>{
+                if ( err.code === 50034 ) return interaction.reply({ content: error.fr.commandError.bulkDelete, ephemeral: true })
                 console.log(err)
             } )
     },

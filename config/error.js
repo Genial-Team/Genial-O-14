@@ -10,8 +10,9 @@ module.exports = {
         },
         commandError:{
             commonError : "une erreur est survenue, merci de re-essayez plus tard",
-            ProcessError : "Une erreur interne s'est produite, merci de re-essayez plus tard ou de contacté l'équipe de développement",
-            noArgumentFound: "une erreur est survenue, merci de vérifié les argument de votre commande"
+            bulkDelete: "Vous ne pouvez supprimer que les messages datant de moins de 14 jours.",
+            processError : "Une erreur interne s'est produite, merci de re-essayez plus tard ou de contacté l'équipe de développement",
+            noArgumentFound: "une erreur est survenue, merci de vérifié les arguments de votre commande"
         },
         checkingValidity:{
             canNotBeUsedOnDM : "cette commande doit être utilisé que dans un server"
@@ -29,6 +30,9 @@ module.exports = {
         },
         commandError:{
             commonError : "an error occurred, please try again later",
+            bulkDelete: "You can only bulk delete messages that are under 14 days old.",
+            processError: "An internal error has occurred, please try again later or contact the development team.",
+            noArgumentFound: "an error has occurred, please check the arguments of your command"
         },
         checkingValidity:{
             canNotBeUsedOnDM : "this command must be used only on a server"
